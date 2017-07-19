@@ -1,0 +1,21 @@
+ln -s /usr/local/php5/bin/phpize /usr/bin/phpize  //系统命令软链接
+  
+cd /home/default7/lamp/php-5.5.13/ext/zlib  
+  
+mv config0.m4 config.m4  
+  
+phpize  
+  
+//这里提示报错，安装bz2,bz2-devel  
+  
+yum install bz2 bz2-devel  
+  
+./configure --with-php-config=/usr/local/php5/bin/php-config  
+  
+make  
+  
+make test  
+  
+make install  
+  
+vim /etc/php.ini ##加入extension=bz2.so  
