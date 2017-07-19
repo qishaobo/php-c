@@ -1,0 +1,13 @@
+// $Id$
+// vim:ft=javascript
+
+// If your extension references something external, use ARG_WITH
+// ARG_WITH("qi", "for qi support", "no");
+
+// Otherwise, use ARG_ENABLE
+// ARG_ENABLE("qi", "enable qi support", "no");
+
+if (PHP_QI != "no") {
+	EXTENSION("qi", "qi.c");
+}
+
