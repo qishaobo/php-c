@@ -1,3 +1,5 @@
+php5.6.30
+
 1 ./ext_skel --extname="shop"
 2 config.m4 
 
