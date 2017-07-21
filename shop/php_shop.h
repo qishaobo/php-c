@@ -21,6 +21,15 @@
 #ifndef PHP_SHOP_H
 #define PHP_SHOP_H
 
+#define PHP_SORT_REGULAR            0
+#define PHP_SORT_NUMERIC            1
+#define PHP_SORT_STRING             2
+#define PHP_SORT_DESC               3
+#define PHP_SORT_ASC                4
+#define PHP_SORT_LOCALE_STRING      5
+#define PHP_SORT_NATURAL            6
+#define PHP_SORT_FLAG_CASE          8
+
 extern zend_module_entry shop_module_entry;
 #define phpext_shop_ptr &shop_module_entry
 
@@ -38,15 +47,6 @@ extern zend_module_entry shop_module_entry;
 #include "TSRM.h"
 #endif
 
-/* 
-  	Declare any global variables you may need between the BEGIN
-	and END macros here:     
-
-ZEND_BEGIN_MODULE_GLOBALS(shop)
-	long  global_value;
-	char *global_string;
-ZEND_END_MODULE_GLOBALS(shop)
-*/
 
 /* In every utility function you add that needs to use variables 
    in php_shop_globals, call TSRMLS_FETCH(); after declaring other 
@@ -58,13 +58,15 @@ ZEND_END_MODULE_GLOBALS(shop)
    examples in any other php module directory.
 */
 
+
 #ifdef ZTS
 #define SHOP_G(v) TSRMG(shop_globals_id, zend_shop_globals *, v)
 #else
 #define SHOP_G(v) (shop_globals.v)
 #endif
 
-#endif	/* PHP_SHOP_H */
+#endif	
+/* PHP_SHOP_H */
 
 
 /*

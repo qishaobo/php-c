@@ -1,0 +1,53 @@
+PHP_FUNCTION(type_test)
+{
+    zval *uservar;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", uservar) == FAILURE) {
+
+        RETURN_NULL();
+
+    }
+
+    switch (Z_TYPE_P(uservar)) {
+
+        case IS_NULL:
+            php_printf("NULL ");
+            break;
+
+        case IS_BOOL:
+            php_printf("Boolean: %s ", Z_LVAL_P(uservar) ? "TRUE" : "FALSE");
+            break;
+
+        case IS_LONG:
+            php_printf("Long: %ld ", Z_LVAL_P(uservar));
+            break;
+
+        case IS_DOUBLE:
+            php_printf("Double: %f ", Z_DVAL_P(uservar));
+            break;
+
+        case IS_STRING:
+            php_printf("String: ");
+            PHPWRITE(Z_STRVAL_P(uservar), Z_STRLEN_P(uservar));
+            php_printf(" ");
+            break;
+
+        case IS_RESOURCE:
+            php_printf("Resource ");
+            break;
+
+        case IS_ARRAY:
+            php_printf("Array ");
+            break;
+
+        case IS_OBJECT:
+            php_printf("Object ");
+            break;
+
+        default:
+            php_printf("Unknown ");
+
+    }
+
+    RETURN_TRUE;
+}

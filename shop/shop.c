@@ -92,6 +92,49 @@ PHP_FUNCTION(shop_hello) {
     RETURN_STRINGL(strg, len, 0);
 }
 
+PHP_FUNCTION(shop_sort)
+{
+      	Bucket **elems, *temp;
+	HashTable *hash;
+	zval *values, *keys, *pzval;
+	HashPosition pos_values, pos_keys;
+	zval **entry_keys, **entry_values;
+	int num_keys, num_values, num, i=0, j, v;
+        Bucket *p;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "aa", &keys, &values) == FAILURE) {
+	     return;
+	}
+
+
+	num_keys = zend_hash_num_elements(Z_ARRVAL_P(keys));
+	num_values = zend_hash_num_elements(Z_ARRVAL_P(values));
+
+	num = num_keys + num_values;
+        
+        array_init_size(return_value, num);
+
+	for (p = Z_ARRVAL_P(keys)->pListHead, i = 0; p; p = p->pListNext, i++) {
+            Z_ADDREF_PP((zval**)p->pData);
+            zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
+	}
+
+        for (p = Z_ARRVAL_P(values)->pListHead, j = 0; p; p = p->pListNext, j++) {
+            Z_ADDREF_PP((zval**)p->pData);
+            zend_hash_index_update(Z_ARRVAL_P(return_value), (p->h)+i+1, p->pData, sizeof(zval*), NULL);
+        }
+
+
+/*
+
+ php_array_merge(Z_ARRVAL_P(return_value), Z_ARRVAL_P(keys), 0  TSRMLS_CC);  
+          php_array_merge(Z_ARRVAL_P(return_value), Z_ARRVAL_P(values), 0  TSRMLS_CC);
+  */             
+
+	/*RETURN_LONG(num);*/
+}
+
+
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and 
    unfold functions in source code. See the corresponding marks just before 
@@ -173,6 +216,7 @@ const zend_function_entry shop_functions[] = {
 	PHP_FE(shop,	NULL)		/* For testing, remove later. */
 	PHP_FE(shop_test, NULL)
         PHP_FE(shop_hello, NULL)
+        PHP_FE(shop_sort, NULL)
 	PHP_FE_END	/* Must be the last line in shop_functions[] */
 };
 /* }}} */

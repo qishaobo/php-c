@@ -710,15 +710,14 @@ h	HashTable*		数组的哈希表
 
 
 
-表格 35-1. Predefined Macros for Returning Values from a Function
-Macro   Description
-RETURN_RESOURCE(resource)           Returns a resource.
-RETURN_BOOL(bool)                   Returns a Boolean.
-RETURN_NULL()                       Returns nothing (a NULL value).
-RETURN_LONG(long)                   Returns a long.
-RETURN_DOUBLE(double)               Returns a double.
-RETURN_STRING(string, duplicate)    Returns a string. The duplicate flag indicates whether the string should be duplicated using estrdup().
-RETURN_STRINGL(string, length, duplicate) Returns a string of the specified length; otherwise, behaves like RETURN_STRING. This macro is faster and binary-safe, however.
-RETURN_EMPTY_STRING()               Returns an empty string.
-RETURN_FALSE                        Returns Boolean false.
-RETURN_TRUE                         Returns Boolean true.
+#define RETURN_RESOURCE(l) { RETVAL_RESOURCE(l); return; }
+#define RETURN_BOOL(b) { RETVAL_BOOL(b); return; }
+#define RETURN_NULL() { RETVAL_NULL(); return;}
+#define RETURN_LONG(l) { RETVAL_LONG(l); return; }
+#define RETURN_DOUBLE(d) { RETVAL_DOUBLE(d); return; }
+#define RETURN_STRING(s, duplicate) { RETVAL_STRING(s, duplicate); return; }
+#define RETURN_STRINGL(s, l, duplicate) { RETVAL_STRINGL(s, l, duplicate); return; }
+#define RETURN_EMPTY_STRING() { RETVAL_EMPTY_STRING(); return; }
+#define RETURN_ZVAL(zv, copy, dtor) { RETVAL_ZVAL(zv, copy, dtor); return; }
+#define RETURN_FALSE   { RETVAL_FALSE; return; }
+#define RETURN_TRUE   { RETVAL_TRUE; return; }
