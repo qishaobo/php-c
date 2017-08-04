@@ -25,7 +25,11 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
+#include "ext/standard/php_string.h"
+#include "ext/standard/php_smart_str_public.h"
+#include "ext/standard/php_smart_str.h"
 #include "php_shop.h"
+#include <string.h>  
 
 /* If you declare any globals in php_shop.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS(shop)
@@ -90,6 +94,35 @@ PHP_FUNCTION(shop_hello) {
 
     len = spprintf(&strg, 0, "%s %s", name, greeting);
     RETURN_STRINGL(strg, len, 0);
+}
+
+PHP_FUNCTION(shop_date) {
+    char  *date, *month, *day, *year;
+    long date_len;
+    int i;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &date, &date_len) == FAILURE) {
+        RETURN_NULL();
+    }
+
+       month = "02";
+       year = 2018;
+       day = 12;
+       
+       zval *data;
+       MAKE_STD_ZVAL(data);
+      /* ZVAL_LONG(data, year);*/
+	array_init(data);
+	for (i = 0; i < 5; i++) {
+	     add_index_long(data, i, i*3);
+	}
+ 
+	array_init(return_value);
+        add_assoc_zval(return_value, "data", data);
+	add_assoc_string(return_value, "month", month, 1);
+	add_assoc_long(return_value, "day", day);
+	add_assoc_long(return_value, "year", year);
+       add_assoc_string(return_value, "date", date, 1);
 }
 
 PHP_FUNCTION(shop_sort)
@@ -208,6 +241,144 @@ PHP_MINFO_FUNCTION(shop)
 }
 /* }}} */
 
+PHP_FUNCTION(to_tree)
+{
+        zval *arr1, *arr2;
+        HashTable *harr1, *harr2;
+        Bucket *p, *p2;
+        int num_arr1, num_arr2, num, i, j, n;
+        zval *second, *first;
+        char *name;
+
+        if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &arr1) == FAILURE) {
+             return;
+        }
+
+        harr1 = Z_ARRVAL_P(arr1);
+
+        num_arr1 = zend_hash_num_elements(harr1);
+        num = num_arr1;
+
+        array_init_size(return_value, num);
+
+        for (p = harr1->pListHead, i = 0; p; p = p->pListNext, i++) {
+            Z_ADDREF_PP((zval**)p->pData);
+         
+            printf("num-1 %ld \n", i);
+            second = *((zval **) p->pData);
+            harr2 = Z_ARRVAL_P(second);
+            for (p2 = harr2->pListHead; p2; p2 = p2->pListNext) {
+                printf("num-2 %s \n", p2->arKey);
+                first = *((zval **) p2->pData);
+                  convert_to_string(first);   
+                    printf("num-2-2 %s \n", Z_LVAL_P(first));
+            }
+
+            zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
+        }
+}
+
+
+
+PHP_FUNCTION(to_tree_s)
+{
+        zval *arr1, *arr2, **entry, *data;;
+        HashTable *harr1, *harr2;
+        Bucket *p, *p2;
+        int num_arr1, num_arr2, num, i, j, n;
+        zval *second, first;
+        char *name;
+        HashPosition pos;
+
+        if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &arr1) == FAILURE) {
+             return;
+        }
+
+        harr1 = Z_ARRVAL_P(arr1);
+
+        num_arr1 = zend_hash_num_elements(harr1);
+        num = num_arr1;
+
+        array_init_size(return_value, num);
+
+        for (p = harr1->pListHead, i = 0; p; p = p->pListNext, i++) {
+            Z_ADDREF_PP((zval**)p->pData);
+
+            printf("num-1 %ld \n", i);
+            second = *((zval **) p->pData);
+            harr2 = Z_ARRVAL_P(second);
+
+            zend_hash_internal_pointer_reset_ex(harr2, &pos);
+            while (zend_hash_get_current_data_ex(harr2, (void **)&entry, &pos) == SUCCESS) {
+                MAKE_STD_ZVAL(data);
+                zend_hash_get_current_key_zval_ex(harr2, data, &pos);
+                
+                convert_to_string(data);               
+                convert_to_string_ex(entry);
+
+ printf("num-2-2 %s-%s \n", Z_STRVAL_P(data), Z_LVAL_PP(entry));
+                /*
+                if (Z_TYPE_P(data) == IS_LONG) {
+                    printf("num-2-1 %s \n", Z_LVAL_P(data));
+                } else if (Z_TYPE_P(data) == IS_STRING) {
+                    printf("num-2-2 %s \n", Z_STRVAL_P(data));
+                } else {
+                    printf("num-2-3 \n");
+                }
+
+               convert_to_string_ex(entry);
+
+               if (Z_TYPE_PP(entry) == IS_LONG) {
+                    printf("num-3-1 %ld \n", Z_LVAL_PP(entry));
+                } else if (Z_TYPE_PP(entry) == IS_STRING) {
+                    printf("num-3-2 %s \n", Z_STRVAL_PP(entry));
+                } else {
+                    printf("num-3-3\n");
+                }
+ */
+                 zend_hash_move_forward_ex(harr2, &pos);
+            }
+
+
+            zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
+        }
+}
+
+
+
+PHP_FUNCTION(hello_array_strings)
+{
+	zval *arr1, *arr2;
+	HashTable *harr1, *harr2;
+	Bucket *p;
+	int num_arr1, num_arr2, num, i, j;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "aa", &arr1, &arr2) == FAILURE) {
+	     return;
+	}
+
+	harr1 = Z_ARRVAL_P(arr1);
+	harr2 = Z_ARRVAL_P(arr2);
+
+	num_arr1 = zend_hash_num_elements(harr1);
+	num_arr2 = zend_hash_num_elements(harr2);
+	num = num_arr1 + num_arr2;
+        
+    array_init_size(return_value, num);
+
+	for (p = harr1->pListHead, i = 0; p; p = p->pListNext, i++) {
+        Z_ADDREF_PP((zval**)p->pData);
+        zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
+	}
+
+    for (p = harr2->pListHead, j = 0; p; p = p->pListNext, j++) {
+        Z_ADDREF_PP((zval**)p->pData);
+        zend_hash_index_update(Z_ARRVAL_P(return_value), (p->h)+i+1, p->pData, sizeof(zval*), NULL);
+    }
+}
+
+
+
 /* {{{ shop_functions[]
  *
  * Every user visible function must have an entry in shop_functions[].
@@ -217,6 +388,9 @@ const zend_function_entry shop_functions[] = {
 	PHP_FE(shop_test, NULL)
         PHP_FE(shop_hello, NULL)
         PHP_FE(shop_sort, NULL)
+        PHP_FE(shop_date, NULL)
+        PHP_FE(to_tree, NULL)
+	PHP_FE(hello_array_strings, NULL)
 	PHP_FE_END	/* Must be the last line in shop_functions[] */
 };
 /* }}} */
