@@ -105,29 +105,29 @@ PHP_FUNCTION(shop_date) {
         RETURN_NULL();
     }
 
-       month = "02";
-       year = 2018;
-       day = 12;
+    month = "02";
+    year = 2018;
+    day = 12;
        
-       zval *data;
-       MAKE_STD_ZVAL(data);
-      /* ZVAL_LONG(data, year);*/
-	array_init(data);
-	for (i = 0; i < 5; i++) {
-	     add_index_long(data, i, i*3);
-	}
+    zval *data;
+    MAKE_STD_ZVAL(data);
+    /* ZVAL_LONG(data, year);*/
+  	array_init(data);
+  	for (i = 0; i < 5; i++) {
+  	 add_index_long(data, i, i*3);
+  	}
  
 	array_init(return_value);
-        add_assoc_zval(return_value, "data", data);
+    add_assoc_zval(return_value, "data", data);
 	add_assoc_string(return_value, "month", month, 1);
 	add_assoc_long(return_value, "day", day);
 	add_assoc_long(return_value, "year", year);
-       add_assoc_string(return_value, "date", date, 1);
+    add_assoc_string(return_value, "date", date, 1);
 }
 
 PHP_FUNCTION(shop_sort)
 {
-      	Bucket **elems, *temp;
+    Bucket **elems, *temp;
 	HashTable *hash;
 	zval *values, *keys, *pzval;
 	HashPosition pos_values, pos_keys;
@@ -278,7 +278,65 @@ PHP_FUNCTION(to_tree)
         }
 }
 
+PHP_FUNCTION(tree_to_array)
+{
+    zval *arr;
+    HashTable *harr;
+    char *pid, *id, *strg;
+    int num, pid_len, id_len, len;
 
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|ss", &arr, &id, &id_len, &pid, &pid_len) == FAILURE) {
+        return;
+    }
+
+	if (ZEND_NUM_ARGS() < 2) {
+		id = "id";
+	}
+
+	if (ZEND_NUM_ARGS() < 3) {
+        pid = "pid";
+    }
+
+    harr = Z_ARRVAL_P(arr);
+    num = zend_hash_num_elements(harr);
+    array_init_size(return_value, num);
+    create_arr(harr, return_value, id, pid, 0, 0);
+}
+
+
+void create_arr(HashTable *harr, zval *return_value, char *id, char *pid, int pid_val, int level)
+{
+    zval *arr, *arr_son;
+    HashTable *harr_son;
+    Bucket *p, *p2;
+    int num_arr, num_arr_son,i;
+    zval *arr_data, *arr_son_data;
+    int data, id_val;
+
+    level++;
+
+    for (p = harr->pListHead, i = 0; p; p = p->pListNext, i++) {
+        Z_ADDREF_PP((zval**)p->pData);
+        arr_data = *((zval **) p->pData);
+        harr_son = Z_ARRVAL_P(arr_data);
+        for (p2 = harr_son->pListHead; p2; p2 = p2->pListNext) {
+            arr_son_data = *((zval **) p2->pData);
+            if (Z_TYPE_P(arr_son_data) == IS_LONG) {
+        	    data = Z_LVAL_P(arr_son_data);
+	        }
+
+    		if (strcmp(p2->arKey,id)==0) {
+      			id_val=data;
+    		}
+
+            if (data == pid_val && strcmp(p2->arKey,pid)==0) {
+                zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
+                add_assoc_long(*((zval **) p->pData), "level", level);
+                create_arr(harr, return_value, id, pid, id_val, level);
+            }
+        }
+    }
+}
 
 PHP_FUNCTION(to_tree_s)
 {
@@ -390,6 +448,7 @@ const zend_function_entry shop_functions[] = {
         PHP_FE(shop_sort, NULL)
         PHP_FE(shop_date, NULL)
         PHP_FE(to_tree, NULL)
+        PHP_FE(tree_to_array, NULL)
 	PHP_FE(hello_array_strings, NULL)
 	PHP_FE_END	/* Must be the last line in shop_functions[] */
 };
