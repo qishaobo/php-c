@@ -310,28 +310,25 @@ void create_arr(HashTable *harr, zval *return_value, char *id, char *pid, int pi
     HashTable *harr_son;
     Bucket *p, *p2;
     int num_arr, num_arr_son,i;
-    zval *arr_data, *arr_son_data;
+    zval *arr_data, **arr_id, **arr_pid;
     int data, id_val;
 
     level++;
-
     for (p = harr->pListHead, i = 0; p; p = p->pListNext, i++) {
         Z_ADDREF_PP((zval**)p->pData);
-        arr_data = *((zval **) p->pData);
-        harr_son = Z_ARRVAL_P(arr_data);
-        for (p2 = harr_son->pListHead; p2; p2 = p2->pListNext) {
-            arr_son_data = *((zval **) p2->pData);
-            if (Z_TYPE_P(arr_son_data) == IS_LONG) {
-        	    data = Z_LVAL_P(arr_son_data);
-	        }
+        harr_son = Z_ARRVAL_P(*((zval **) p->pData));
 
-    		if (strcmp(p2->arKey,id)==0) {
-      			id_val=data;
-    		}
+        if (SUCCESS == zend_hash_find(harr_son, pid, sizeof(pid), (void **) &arr_pid)){
+            data = Z_LVAL_PP(arr_pid);
 
-            if (data == pid_val && strcmp(p2->arKey,pid)==0) {
+            if (data == pid_val) {
                 zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
                 add_assoc_long(*((zval **) p->pData), "level", level);
+
+	            if (SUCCESS == zend_hash_find(harr_son, id, sizeof(id), (void **) &arr_id)) {
+	                id_val = Z_LVAL_PP(arr_id);
+	            }
+
                 create_arr(harr, return_value, id, pid, id_val, level);
             }
         }
