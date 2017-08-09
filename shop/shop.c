@@ -241,42 +241,6 @@ PHP_MINFO_FUNCTION(shop)
 }
 /* }}} */
 
-PHP_FUNCTION(to_tree)
-{
-        zval *arr1, *arr2;
-        HashTable *harr1, *harr2;
-        Bucket *p, *p2;
-        int num_arr1, num_arr2, num, i, j, n;
-        zval *second, *first;
-        char *name;
-
-        if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &arr1) == FAILURE) {
-             return;
-        }
-
-        harr1 = Z_ARRVAL_P(arr1);
-
-        num_arr1 = zend_hash_num_elements(harr1);
-        num = num_arr1;
-
-        array_init_size(return_value, num);
-
-        for (p = harr1->pListHead, i = 0; p; p = p->pListNext, i++) {
-            Z_ADDREF_PP((zval**)p->pData);
-         
-            printf("num-1 %ld \n", i);
-            second = *((zval **) p->pData);
-            harr2 = Z_ARRVAL_P(second);
-            for (p2 = harr2->pListHead; p2; p2 = p2->pListNext) {
-                printf("num-2 %s \n", p2->arKey);
-                first = *((zval **) p2->pData);
-                  convert_to_string(first);   
-                    printf("num-2-2 %s \n", Z_LVAL_P(first));
-            }
-
-            zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
-        }
-}
 
 PHP_FUNCTION(tree_to_array)
 {
@@ -289,20 +253,54 @@ PHP_FUNCTION(tree_to_array)
         return;
     }
 
-	if (ZEND_NUM_ARGS() < 2) {
-		id = "id";
-	}
-
-	if (ZEND_NUM_ARGS() < 3) {
-        pid = "pid";
+    if (ZEND_NUM_ARGS() < 2) {
+	id = "id";
     }
 
+    if (ZEND_NUM_ARGS() < 3) {
+        pid = "pid";
+    }
     harr = Z_ARRVAL_P(arr);
     num = zend_hash_num_elements(harr);
     array_init_size(return_value, num);
-    create_arr(harr, return_value, id, pid, 0, 0);
+    create_tree(harr, return_value, id, pid, 0, 0);
 }
 
+
+void create_tree(HashTable *harr, zval *return_value, char *id, char *pid, int pid_val, int level)
+{
+    zval **arr_id, **arr_pid, *tree_son;
+    HashTable *harr_son,*htree_son;
+    Bucket *p;
+    int num;
+
+    level++;
+    for (p = harr->pListHead; p; p = p->pListNext) {
+        Z_ADDREF_PP((zval**)p->pData);
+        harr_son = Z_ARRVAL_P(*((zval **) p->pData));
+
+        if (SUCCESS == zend_hash_find(harr_son, pid, sizeof(pid), (void **) &arr_pid)){
+            if (Z_LVAL_PP(arr_pid) == pid_val) {
+                zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
+                add_assoc_long(*((zval **) p->pData), "level", level);
+
+                MAKE_STD_ZVAL(tree_son);
+                Z_ADDREF_P(tree_son);
+                array_init(tree_son);
+
+
+                zend_hash_find(harr_son, id, sizeof(id), (void **) &arr_id);
+		        create_tree(harr, tree_son, id, pid, Z_LVAL_PP(arr_id), level);
+                htree_son = Z_ARRVAL_P(tree_son);
+                num = zend_hash_num_elements(htree_son);
+                if (num > 0) {
+                    add_assoc_zval(*((zval **) p->pData), "son", tree_son);
+                }
+            }
+        }
+    }
+
+}
 
 void create_arr(HashTable *harr, zval *return_value, char *id, char *pid, int pid_val, int level)
 {
@@ -334,72 +332,6 @@ void create_arr(HashTable *harr, zval *return_value, char *id, char *pid, int pi
         }
     }
 }
-
-PHP_FUNCTION(to_tree_s)
-{
-        zval *arr1, *arr2, **entry, *data;;
-        HashTable *harr1, *harr2;
-        Bucket *p, *p2;
-        int num_arr1, num_arr2, num, i, j, n;
-        zval *second, first;
-        char *name;
-        HashPosition pos;
-
-        if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &arr1) == FAILURE) {
-             return;
-        }
-
-        harr1 = Z_ARRVAL_P(arr1);
-
-        num_arr1 = zend_hash_num_elements(harr1);
-        num = num_arr1;
-
-        array_init_size(return_value, num);
-
-        for (p = harr1->pListHead, i = 0; p; p = p->pListNext, i++) {
-            Z_ADDREF_PP((zval**)p->pData);
-
-            printf("num-1 %ld \n", i);
-            second = *((zval **) p->pData);
-            harr2 = Z_ARRVAL_P(second);
-
-            zend_hash_internal_pointer_reset_ex(harr2, &pos);
-            while (zend_hash_get_current_data_ex(harr2, (void **)&entry, &pos) == SUCCESS) {
-                MAKE_STD_ZVAL(data);
-                zend_hash_get_current_key_zval_ex(harr2, data, &pos);
-                
-                convert_to_string(data);               
-                convert_to_string_ex(entry);
-
- printf("num-2-2 %s-%s \n", Z_STRVAL_P(data), Z_LVAL_PP(entry));
-                /*
-                if (Z_TYPE_P(data) == IS_LONG) {
-                    printf("num-2-1 %s \n", Z_LVAL_P(data));
-                } else if (Z_TYPE_P(data) == IS_STRING) {
-                    printf("num-2-2 %s \n", Z_STRVAL_P(data));
-                } else {
-                    printf("num-2-3 \n");
-                }
-
-               convert_to_string_ex(entry);
-
-               if (Z_TYPE_PP(entry) == IS_LONG) {
-                    printf("num-3-1 %ld \n", Z_LVAL_PP(entry));
-                } else if (Z_TYPE_PP(entry) == IS_STRING) {
-                    printf("num-3-2 %s \n", Z_STRVAL_PP(entry));
-                } else {
-                    printf("num-3-3\n");
-                }
- */
-                 zend_hash_move_forward_ex(harr2, &pos);
-            }
-
-
-            zend_hash_quick_update(Z_ARRVAL_P(return_value), p->arKey, p->nKeyLength, p->h, p->pData, sizeof(zval*), NULL);
-        }
-}
-
-
 
 PHP_FUNCTION(hello_array_strings)
 {
@@ -444,7 +376,6 @@ const zend_function_entry shop_functions[] = {
         PHP_FE(shop_hello, NULL)
         PHP_FE(shop_sort, NULL)
         PHP_FE(shop_date, NULL)
-        PHP_FE(to_tree, NULL)
         PHP_FE(tree_to_array, NULL)
 	PHP_FE(hello_array_strings, NULL)
 	PHP_FE_END	/* Must be the last line in shop_functions[] */
